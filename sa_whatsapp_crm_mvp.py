@@ -273,59 +273,51 @@ def assign():
 
 @app.route("/webhook", methods=["GET", "POST"])
 def webhook():
-
-    # VERIFY WEBHOOK
     if request.method == "GET":
-        verify_token = "my_verify_token_123"
-
         mode = request.args.get("hub.mode")
         token = request.args.get("hub.verify_token")
         challenge = request.args.get("hub.challenge")
 
-        if mode and token:
-            if mode == "subscribe" and token == verify_token:
-                return challenge, 200
+        if mode == "subscribe" and token == VERIFY_TOKEN:
+            return challenge, 200
+
+        return "Verification failed", 403
+
+    data = request.get_json(silent=True) or {}
+
+    print("INCOMING WEBHOOK:")
+    print(data)
+
+    try:
+        entry = data.get("entry", [])[0]
+        changes = entry.get("changes", [])[0]
+        value = changes.get("value", {})
+
+        messages = value.get("messages", [])
+        contacts = value.get("contacts", [])
+
+        if messages:
+            msg = messages[0]
+            phone = msg.get("from")
+
+            customer_name = phone
+            if contacts:
+                customer_name = contacts[0].get("profile", {}).get("name", phone)
+
+            if msg.get("type") == "text":
+                text = msg.get("text", {}).get("body", "")
             else:
-                return "Verification token mismatch", 403
+                text = "[Non-text message]"
 
-    # RECEIVE MESSAGE
-    if request.method == "POST":
+            customer = get_or_create_customer(phone, customer_name)
+            save_message(customer["id"], "in", text)
 
-        data = request.get_json()
+            print("NEW CUSTOMER SAVED:", phone, text)
 
-        print("Webhook received:")
-        print(data)
+    except Exception as e:
+        print("WEBHOOK ERROR:", str(e))
 
-        try:
-            entry = data["entry"][0]
-            changes = entry["changes"][0]
-            value = changes["value"]
-
-            if "messages" in value:
-
-                message = value["messages"][0]
-                sender = message["from"]
-
-                text = ""
-
-                if "text" in message:
-                    text = message["text"]["body"]
-
-                customers.append({
-                    "name": sender,
-                    "phone": sender,
-                    "sa": "Unassigned",
-                    "source": "WhatsApp",
-                    "status": text
-                })
-
-                print("Customer added:", sender)
-
-        except Exception as e:
-            print("Webhook error:", e)
-
-        return "EVENT_RECEIVED", 200
-
+    return "EVENT_RECEIVED", 200
 BASE_CSS = """
 <style>
 body { font-family: Arial; background:#f5f6f7; margin:0; }
