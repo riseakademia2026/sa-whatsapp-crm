@@ -12,7 +12,6 @@ def home():
 @app.route("/webhook", methods=["GET", "POST"])
 def webhook():
 
-    # Meta Verify Webhook
     if request.method == "GET":
 
         mode = request.args.get("hub.mode")
@@ -24,7 +23,6 @@ def webhook():
 
         return "Verification failed", 403
 
-    # Incoming WhatsApp Message
     if request.method == "POST":
 
         data = request.get_json()
