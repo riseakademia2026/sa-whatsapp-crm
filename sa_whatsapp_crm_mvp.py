@@ -8,7 +8,6 @@ import os
 app = Flask(__name__)
 app.secret_key = "change_this_secret_key"
 
-# ===== Meta WhatsApp Config =====
 VERIFY_TOKEN = "my_verify_token_123"
 
 WHATSAPP_ACCESS_TOKEN = "PASTE_YOUR_ACCESS_TOKEN_HERE"
@@ -67,18 +66,12 @@ def init_db():
     conn.commit()
 
     if cur.execute("SELECT COUNT(*) AS c FROM users").fetchone()["c"] == 0:
-        cur.execute(
-            "INSERT INTO users (name,email,password_hash,role) VALUES (?,?,?,?)",
-            ("Admin", "admin@test.com", generate_password_hash("123456"), "admin")
-        )
-        cur.execute(
-            "INSERT INTO users (name,email,password_hash,role) VALUES (?,?,?,?)",
-            ("Annelie", "annelie@test.com", generate_password_hash("123456"), "sa")
-        )
-        cur.execute(
-            "INSERT INTO users (name,email,password_hash,role) VALUES (?,?,?,?)",
-            ("SA Test", "sa@test.com", generate_password_hash("123456"), "sa")
-        )
+        cur.execute("INSERT INTO users (name,email,password_hash,role) VALUES (?,?,?,?)",
+                    ("Admin", "admin@test.com", generate_password_hash("123456"), "admin"))
+        cur.execute("INSERT INTO users (name,email,password_hash,role) VALUES (?,?,?,?)",
+                    ("Annelie", "annelie@test.com", generate_password_hash("123456"), "sa"))
+        cur.execute("INSERT INTO users (name,email,password_hash,role) VALUES (?,?,?,?)",
+                    ("SA Test", "sa@test.com", generate_password_hash("123456"), "sa"))
         conn.commit()
 
     conn.close()
@@ -135,9 +128,7 @@ def send_whatsapp(to_phone, text):
         "messaging_product": "whatsapp",
         "to": to_phone,
         "type": "text",
-        "text": {
-            "body": text
-        }
+        "text": {"body": text}
     }
 
     r = requests.post(url, headers=headers, json=payload, timeout=20)
